@@ -81,3 +81,22 @@ def test_semantic_search_with_folder_filter(mock_get_model, tmp_path):
     result = semantic_search("doc", db_path=db_path, folder_path="/folder_a")
     for r in result["results"]:
         assert "/folder_a" in r["source_file"]
+
+
+@patch("server.search.get_model")
+def test_semantic_search_hybrid_mode(mock_get_model, tmp_path):
+    mock_model = type("MockModel", (), {"encode": lambda self, texts, **kw: _fake_embed(texts)})()
+    mock_get_model.return_value = mock_model
+
+    db_path = str(tmp_path / "testdb")
+    store = VectorStore(db_path)
+    _seed_store(store, [
+        "revenue grew 23% in Q3",
+        "python is a programming language",
+        "the weather is nice today",
+    ])
+
+    result = semantic_search("revenue Q3", db_path=db_path, top_k=2, mode="hybrid")
+    assert result["total_results"] >= 1
+    assert result["mode"] == "hybrid"
+    assert "score" in result["results"][0]

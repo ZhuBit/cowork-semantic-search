@@ -1,11 +1,11 @@
 {
   "mcpServers": {
     "semantic-search": {
-      "command": "${CLAUDE_PLUGIN_DATA}/venv/bin/python",
+      "command": "/Users/omardrljevic/Projects/OtherProjects/cowork-sematic-search/.venv/bin/python",
       "args": ["-m", "server.main"],
+      "cwd": "/Users/omardrljevic/Projects/OtherProjects/cowork-sematic-search",
       "env": {
-        "LANCEDB_PATH": "${CLAUDE_PLUGIN_DATA}/lancedb",
-        "PYTHONPATH": "${CLAUDE_PLUGIN_ROOT}"
+        "PYTHONPATH": "/Users/omardrljevic/Projects/OtherProjects/cowork-sematic-search"
       }
     }
   }

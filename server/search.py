@@ -1,4 +1,4 @@
-"""Search logic: embed query, vector search, format results."""
+"""Search logic: embed query, vector/hybrid search, format results."""
 
 import os
 
@@ -12,6 +12,7 @@ def semantic_search(
     folder_path: str | None = None,
     top_k: int = 10,
     file_type: str | None = None,
+    mode: str = "vector",
 ) -> dict:
     if db_path is None:
         db_path = os.environ.get("LANCEDB_PATH", "./lancedb")
@@ -21,15 +22,26 @@ def semantic_search(
     model = get_model()
     query_embedding = model.encode([query], normalize_embeddings=True)[0].tolist()
 
-    results = store.vector_search(
-        query_vector=query_embedding,
-        top_k=top_k,
-        folder_path=folder_path,
-        file_type=file_type,
-    )
+    if mode == "hybrid":
+        store.create_fts_index()
+        results = store.hybrid_search(
+            query_text=query,
+            query_vector=query_embedding,
+            top_k=top_k,
+            folder_path=folder_path,
+            file_type=file_type,
+        )
+    else:
+        results = store.vector_search(
+            query_vector=query_embedding,
+            top_k=top_k,
+            folder_path=folder_path,
+            file_type=file_type,
+        )
 
     return {
         "query": query,
+        "mode": mode,
         "results": results,
         "total_results": len(results),
     }

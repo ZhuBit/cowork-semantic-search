@@ -91,6 +91,93 @@ class VectorStore:
         arrow_table = table.to_arrow().select(["source_file"])
         return list(set(arrow_table.column("source_file").to_pylist()))
 
+    def create_fts_index(self) -> None:
+        """Create or rebuild the full-text search index on the text column."""
+        table = self._get_table()
+        if table is None:
+            return
+        table.create_fts_index("text", replace=True)
+
+    def fts_search(
+        self,
+        query_text: str,
+        top_k: int = 10,
+        folder_path: str | None = None,
+        file_type: str | None = None,
+    ) -> list[dict]:
+        table = self._get_table()
+        if table is None:
+            return []
+        if table.count_rows() == 0:
+            return []
+
+        try:
+            query = table.search(query_text, query_type="fts").limit(top_k)
+        except Exception:
+            return []
+
+        where_clauses = []
+        if folder_path:
+            where_clauses.append(f"folder_path = '{folder_path}'")
+        if file_type:
+            where_clauses.append(f"file_type = '{file_type}'")
+        if where_clauses:
+            query = query.where(" AND ".join(where_clauses), prefilter=True)
+
+        results = query.to_list()
+        return [
+            {
+                "text": r["text"],
+                "source_file": r["source_file"],
+                "file_name": r["file_name"],
+                "file_type": r["file_type"],
+                "folder_path": r["folder_path"],
+                "chunk_index": r["chunk_index"],
+                "score": r.get("_score", 0.0),
+            }
+            for r in results
+        ]
+
+    def hybrid_search(
+        self,
+        query_text: str,
+        query_vector: list[float],
+        top_k: int = 10,
+        folder_path: str | None = None,
+        file_type: str | None = None,
+        rrf_k: int = 60,
+    ) -> list[dict]:
+        """Combine vector and FTS results using Reciprocal Rank Fusion."""
+        vector_results = self.vector_search(
+            query_vector, top_k=top_k * 2,
+            folder_path=folder_path, file_type=file_type,
+        )
+        fts_results = self.fts_search(
+            query_text, top_k=top_k * 2,
+            folder_path=folder_path, file_type=file_type,
+        )
+
+        # Build RRF scores keyed by (source_file, chunk_index)
+        scores: dict[tuple, float] = {}
+        result_map: dict[tuple, dict] = {}
+
+        for rank, r in enumerate(vector_results):
+            key = (r["source_file"], r["chunk_index"])
+            scores[key] = scores.get(key, 0.0) + 1.0 / (rrf_k + rank + 1)
+            result_map[key] = r
+
+        for rank, r in enumerate(fts_results):
+            key = (r["source_file"], r["chunk_index"])
+            scores[key] = scores.get(key, 0.0) + 1.0 / (rrf_k + rank + 1)
+            if key not in result_map:
+                result_map[key] = r
+
+        ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
+        return [
+            {**result_map[key], "rrf_score": score, "score": score}
+            for key, score in ranked
+        ]
+
     def vector_search(
         self,
         query_vector: list[float],

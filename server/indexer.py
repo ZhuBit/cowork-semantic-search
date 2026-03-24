@@ -70,7 +70,7 @@ def index_folder(
 
     import os
     if db_path is None:
-        db_path = os.environ.get("LANCEDB_PATH", str(folder / ".lancedb"))
+        db_path = os.environ.get("LANCEDB_PATH", "./lancedb")
 
     store = VectorStore(db_path)
     type_set = set(file_types) if file_types else None

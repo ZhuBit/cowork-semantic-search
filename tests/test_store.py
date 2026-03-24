@@ -104,3 +104,36 @@ def test_vector_search_with_folder_filter(store):
     )
     assert len(results) == 1
     assert results[0]["folder_path"] == "/folder_a"
+
+
+def test_fts_search(store):
+    chunks = _make_chunks(
+        ["revenue grew 23% in Q3", "the cat sat on the mat", "python programming"],
+    )
+    store.add_chunks(chunks)
+    store.create_fts_index()
+    results = store.fts_search("revenue Q3", top_k=2)
+    assert len(results) >= 1
+    assert "revenue" in results[0]["text"]
+
+
+def test_fts_search_empty_store(store):
+    results = store.fts_search("anything", top_k=5)
+    assert results == []
+
+
+def test_hybrid_search(store):
+    chunks = _make_chunks(
+        ["revenue grew 23% in Q3", "the cat sat on the mat", "python programming"],
+    )
+    store.add_chunks(chunks)
+    store.create_fts_index()
+    # Use the vector of the first chunk and a matching text query
+    results = store.hybrid_search(
+        query_text="revenue Q3",
+        query_vector=chunks[0]["vector"],
+        top_k=2,
+    )
+    assert len(results) >= 1
+    assert "revenue" in results[0]["text"]
+    assert "rrf_score" in results[0]

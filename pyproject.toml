@@ -3,7 +3,7 @@ name = "cowork-semantic-search"
 version = "0.1.0"
 description = "Claude Code plugin for local semantic search over document folders"
 requires-python = ">=3.11"
-license = "MIT"
+license = "AGPL-3.0-or-later"
 
 dependencies = [
     "fastmcp>=2.0,<3.0",
@@ -22,6 +22,9 @@ all = [
     "python-pptx>=1.0,<2.0",
 ]
 dev = ["pytest>=8.0"]
+
+[tool.setuptools.packages.find]
+include = ["server*"]
 
 [project.scripts]
 semantic-search-server = "server.main:run"
