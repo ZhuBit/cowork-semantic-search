@@ -4,6 +4,9 @@
 
 A Claude Code MCP plugin that indexes your local files into a lightweight vector database and lets Claude search them using natural language — instantly, offline, and in any language.
 
+<!-- Replace with your own demo recording -->
+![demo](assets/image.png)
+
 ---
 
 ## The Problem
@@ -45,26 +48,22 @@ Your documents → chunked → embedded → stored in local vector DB
 | PowerPoint | `.pptx` | Slide-level extraction with metadata |
 | CSV | `.csv` | Row-based text extraction |
 
-## Quick Start
+## Getting Started (2 minutes)
 
-### Prerequisites
+**Requirements:** Python 3.11+, Claude Code
 
-- Python 3.11+
-- Claude Code
-
-### Install
+**1. Clone and install**
 
 ```bash
 git clone https://github.com/ZhuBit/cowork-semantic-search.git
 cd cowork-semantic-search
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[all,dev]"
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e ".[all]"
 ```
 
-### Configure Claude Code
+**2. Add to Claude Code**
 
-Add to your project's `.mcp.json`:
+Add to your project's `.mcp.json` (replace paths with your own):
 
 ```json
 {
@@ -81,19 +80,37 @@ Add to your project's `.mcp.json`:
 }
 ```
 
-### Use
-
-Restart Claude Code. Then just talk naturally:
+**3. Restart Claude Code and go**
 
 > "Index all documents in ~/Documents/projects"
 
 > "Search for 'quarterly revenue report'"
 
-> "Find anything about authentication in my notes, use hybrid search"
+That's it. First run downloads the embedding model (~120MB), then everything runs offline.
 
-> "What files are currently indexed?"
+## Example: Search your Obsidian vault
 
-> "Re-index the updated proposal.pdf"
+If you keep notes in Obsidian (or any folder of markdown files), this plugin turns Claude into a search engine for your knowledge base.
+
+```
+You: "Index my vault at ~/Documents/ObsidianVault"
+Claude: Indexed 847 files -> 3,291 chunks in 42s
+
+You: "What did I write about API rate limiting?"
+Claude: Found 6 relevant chunks across 3 files:
+        - notes/backend/rate-limiting-strategies.md
+        - projects/acme-api/design-decisions.md
+        - daily/2025-11-03.md
+        ...
+
+You: "Find anything about the client meeting last November, use hybrid search"
+Claude: Found 4 results using hybrid search (vector + keyword):
+        - meetings/2025-11-12-acme-kickoff.md
+        - daily/2025-11-12.md
+        ...
+```
+
+Works the same with PDFs, Word docs, PowerPoints, and CSVs — just point it at a folder.
 
 ## Tools
 
@@ -163,4 +180,4 @@ pytest tests/ -v
 
 ## License
 
-MIT
+AGPL-3.0 — free to use, modify, and self-host. If you offer this as a network service, you must share your source code. See [LICENSE](LICENSE) for details.
